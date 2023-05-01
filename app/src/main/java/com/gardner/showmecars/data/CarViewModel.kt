@@ -1,5 +1,6 @@
 package com.gardner.showmecars.data
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gardner.showmecars.data.remote.SnappCarApi
@@ -7,6 +8,7 @@ import com.gardner.showmecars.data.remote.dto.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,14 +22,26 @@ class CarViewModel @Inject constructor(
     private val _cars = MutableStateFlow<List<Result>>(emptyList())
     val cars = _cars.asStateFlow()
     
-    fun searchCars(city: String, country: String) {
+    private val _offset = MutableStateFlow(0)
+    val offset: StateFlow<Int> get() = _offset.asStateFlow()
+    
+    fun searchCars(city: String, country: String, limit: Int = 10) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val (latitude, longitude) = getLatLngForCity(city, country)
                 val response =
-                    api.getCars(country = country, latitude = latitude, longitude = longitude)
+                    api.getCars(
+                        country = country,
+                        latitude = latitude,
+                        longitude = longitude,
+                        offset = _offset.value,
+                        limit = limit
+                    )
                 if (response.isSuccessful) {
-                    _cars.value = response.body()?.results ?: emptyList()
+                    val newResults = response.body()?.results ?: emptyList()
+                    _cars.value += newResults
+                    _offset.value = _cars.value.size
+                    Log.d("OFFSET ", _offset.value.toString())
                 }
             }
         }
