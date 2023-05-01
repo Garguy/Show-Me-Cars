@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -28,9 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.gardner.showmecars.data.CarViewModel
 import com.gardner.showmecars.ui.screens.carlist.CarListItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +70,9 @@ fun CarListScreen(
         LaunchedEffect(searchQuery) {
             delay(500)
             if (searchQuery.isNotEmpty()) {
-                viewModel.searchCars(searchQuery, "NL")
+                withContext(Dispatchers.IO) {
+                    viewModel.searchCars(searchQuery, "NL")
+                }
             }
         }
         LazyVerticalGrid(

@@ -1,17 +1,14 @@
 package com.gardner.showmecars.data
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gardner.showmecars.data.remote.SnappCarApi
 import com.gardner.showmecars.data.remote.dto.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,25 +26,23 @@ class CarViewModel @Inject constructor(
     
     fun searchCars(city: String, country: String, limit: Int = 10) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    val (latitude, longitude) = getLatLngForCity(city, country)
-                    val response =
-                        api.getCars(
-                            country = country,
-                            latitude = latitude,
-                            longitude = longitude,
-                            offset = _offset.value,
-                            limit = limit
-                        )
-                    if (response.isSuccessful) {
-                        val newResults = response.body()?.results ?: emptyList()
-                        _cars.value += newResults
-                        _offset.value = _cars.value.size
-                    }
-                } catch (e: Exception) {
-                        _errorMessage.value = e.message
+            try {
+                val (latitude, longitude) = getLatLngForCity(city, country)
+                val response =
+                    api.getCars(
+                        country = country,
+                        latitude = latitude,
+                        longitude = longitude,
+                        offset = _offset.value,
+                        limit = limit
+                    )
+                if (response.isSuccessful) {
+                    val newResults = response.body()?.results ?: emptyList()
+                    _cars.value += newResults
+                    _offset.value = _cars.value.size
                 }
+            } catch (e: Exception) {
+                _errorMessage.value = e.message
             }
         }
     }
