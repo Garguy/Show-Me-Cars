@@ -23,25 +23,30 @@ class CarViewModel @Inject constructor(
     val cars = _cars.asStateFlow()
     
     private val _offset = MutableStateFlow(0)
-    val offset: StateFlow<Int> get() = _offset.asStateFlow()
+    
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> get() = _errorMessage.asStateFlow()
     
     fun searchCars(city: String, country: String, limit: Int = 10) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val (latitude, longitude) = getLatLngForCity(city, country)
-                val response =
-                    api.getCars(
-                        country = country,
-                        latitude = latitude,
-                        longitude = longitude,
-                        offset = _offset.value,
-                        limit = limit
-                    )
-                if (response.isSuccessful) {
-                    val newResults = response.body()?.results ?: emptyList()
-                    _cars.value += newResults
-                    _offset.value = _cars.value.size
-                    Log.d("OFFSET ", _offset.value.toString())
+                try {
+                    val (latitude, longitude) = getLatLngForCity(city, country)
+                    val response =
+                        api.getCars(
+                            country = country,
+                            latitude = latitude,
+                            longitude = longitude,
+                            offset = _offset.value,
+                            limit = limit
+                        )
+                    if (response.isSuccessful) {
+                        val newResults = response.body()?.results ?: emptyList()
+                        _cars.value += newResults
+                        _offset.value = _cars.value.size
+                    }
+                } catch (e: Exception) {
+                        _errorMessage.value = e.message
                 }
             }
         }
@@ -55,5 +60,9 @@ class CarViewModel @Inject constructor(
         )
         
         return cities[city] ?: cities.values.first()
+    }
+    
+    fun clearErrorMessage() {
+        _errorMessage.value = null
     }
 }
